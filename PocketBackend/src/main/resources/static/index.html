@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JWT Auth Test</title>
+</head>
+<body>
+    <h2>Register</h2>
+    <form id="registerForm">
+        <input type="text" id="regDisplayName" placeholder="Display Name"><br>
+        <input type="email" id="regEmail" placeholder="Email"><br>
+        <input type="password" id="regPassword" placeholder="Password"><br>
+        <button type="submit">Register</button>
+    </form>
+
+    <h2>Login</h2>
+    <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="Email"><br>
+        <input type="password" id="loginPassword" placeholder="Password"><br>
+        <button type="submit">Login</button>
+    </form>
+
+    <h2>Home</h2>
+    <button onclick="getHome()">Get Home</button>
+    <div id="homeResult"></div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        let token = localStorage.getItem('jwt_token');
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    displayName: document.getElementById('regDisplayName').value,
+                    email: document.getElementById('regEmail').value,
+                    password: document.getElementById('regPassword').value
+                })
+            });
+            const data = await response.json();
+            if (data.token) {
+                localStorage.setItem('jwt_token', data.token);
+                token = data.token;
+                alert('Registration successful!');
+            }
+        });
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value
+                })
+            });
+            const data = await response.json();
+            if (data.token) {
+                localStorage.setItem('jwt_token', data.token);
+                token = data.token;
+                alert('Login successful!');
+            }
+        });
+
+        async function getHome() {
+            const response = await fetch(`${API_URL}/home`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.text();
+            document.getElementById('homeResult').textContent = data;
+        }
+    </script>
+</body>
+</html>
