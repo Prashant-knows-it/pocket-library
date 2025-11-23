@@ -42,7 +42,7 @@ public class BookService {
 
     private String sendRequest() throws Exception {
         HttpClient client = HttpClient.newHttpClient();
-        String body = "{\"model\":\"sonar-pro\",\"messages\":[{\"role\":\"user\",\"content\":\"JSON array of 16 lesser known but best books: bookTitle, authorName, description, genre, numberOfPages\"}]}";
+        String body = "{\"model\":\"sonar-pro\",\"messages\":[{\"role\":\"user\",\"content\":\"JSON array of 16 unique but best books: bookTitle, authorName, description, genre, numberOfPages\"}]}";
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))

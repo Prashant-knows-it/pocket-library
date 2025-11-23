@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import api from '../services/api'
 import { AuthContext } from '../App'
 
@@ -40,6 +40,9 @@ export default function Login() {
           <input value={password} onChange={e => setPassword(e.target.value)} type="password" required />
         </label>
         <button type="submit">Login</button>
+        <p style={{ marginTop: '1rem', textAlign: 'center' }}>
+          Don't have an account? <Link to="/signup">Sign up</Link>
+        </p>
         {error && <div className="error">{error}</div>}
       </form>
     </div>
