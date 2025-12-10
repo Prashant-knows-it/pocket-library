@@ -11,18 +11,23 @@ export default function Header() {
     else navigate('/login')
   }
 
+  const handleLogoClick = () => {
+    navigate('/')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
     <div className="site-header-bleed">
       <header className="site-header">
         <div className="site-header__inner">
-          <div className="brand">
+          <div className="brand" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
             <div className="logo" aria-hidden>📚</div>
             <div className="title">pocketlibrary</div>
           </div>
 
           <div className="actions">
             <button className="right-btn" onClick={handleRight}>
-              {auth && auth.isAuthenticated ? 'My Library' : 'Login'}
+              {auth && auth.isAuthenticated ? '📖 My Library' : '🔐 Login'}
             </button>
             {auth && auth.isAuthenticated && (
               <button
@@ -31,8 +36,13 @@ export default function Header() {
                   logout()
                   navigate('/')
                 }}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: '10px',
+                  transition: 'all 0.2s ease'
+                }}
               >
-                Logout
+                👋 Logout
               </button>
             )}
           </div>
