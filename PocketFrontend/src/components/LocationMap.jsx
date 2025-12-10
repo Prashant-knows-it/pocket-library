@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { ranchiLocations } from '../data/ranchiLocations';
 
 // We'll load Leaflet dynamically to avoid SSR issues
 let L = null;
@@ -179,8 +180,9 @@ export default function LocationMap() {
             <p style="display: inline-block; background: linear-gradient(90deg, #6c5ce7, #00c2ff); color: white; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; margin: 8px 0;">
               ${place.type}
             </p>
+            ${place.rating ? `<p style="font-size: 13px; color: #f59e0b; font-weight: 600; margin: 4px 0;">⭐ ${place.rating}/5</p>` : ''}
             <p style="font-size: 13px; color: #334155; margin: 4px 0;">📍 ${place.address}</p>
-            ${place.phone !== 'N/A' ? `<p style="font-size: 13px; color: #334155; margin: 4px 0;">📞 ${place.phone}</p>` : ''}
+            ${place.phone !== 'N/A' && place.phone ? `<p style="font-size: 13px; color: #334155; margin: 4px 0;">📞 ${place.phone}</p>` : ''}
             ${place.website !== 'N/A' ? `<a href="${place.website}" target="_blank" style="display: inline-block; margin-top: 8px; color: #6c5ce7; font-weight: 600; font-size: 13px; text-decoration: none;">Visit Website →</a>` : ''}
           </div>
         `);
@@ -238,8 +240,43 @@ export default function LocationMap() {
         );
     };
 
-    const fetchNearbyPlaces = async (lat, lng, radius = 20000) => { // Increased to 20 km for more results
+    const fetchNearbyPlaces = async (lat, lng, radius = 20000, cityName = null) => { // Increased to 20 km for more results
         try {
+            // Check if the city is Ranchi - use CSV data
+            if (cityName === 'Ranchi' || (userLocation?.city === 'Ranchi')) {
+                // Use CSV data for Ranchi
+                const places = ranchiLocations.map((location, index) => {
+                    // Determine type based on category
+                    let type = 'Library';
+                    const category = location.category.toLowerCase();
+                    if (category.includes('book store') || category.includes('bookstore') ||
+                        category === 'book store' || category.includes('depot')) {
+                        type = 'Bookstore';
+                    } else if (category.includes('library')) {
+                        type = 'Library';
+                    } else if (category.includes('book club')) {
+                        type = 'Book Club';
+                    }
+
+                    return {
+                        id: `ranchi-${index}`,
+                        name: location.name,
+                        type: type,
+                        lat: location.lat,
+                        lng: location.lng,
+                        address: location.address || 'Address not available',
+                        phone: location.phone || 'N/A',
+                        website: 'N/A',
+                        rating: location.rating
+                    };
+                });
+
+                setNearbyPlaces(places);
+                addMarkers({ lat, lng, city: 'Ranchi', country: 'India' }, places);
+                return;
+            }
+
+            // For other cities, use Overpass API as before
             const query = `
         [out:json][timeout:25];
         (
@@ -309,7 +346,7 @@ export default function LocationMap() {
         setMapCenter([city.lat, city.lng]);
         updateMapView(city.lat, city.lng);
 
-        await fetchNearbyPlaces(city.lat, city.lng);
+        await fetchNearbyPlaces(city.lat, city.lng, 20000, cityName);
         setLoading(false);
     };
 
@@ -320,7 +357,7 @@ export default function LocationMap() {
             const ranchi = INDIAN_CITIES[0]; // Ranchi
             const location = { lat: ranchi.lat, lng: ranchi.lng, city: ranchi.name, country: 'India' };
             setUserLocation(location);
-            await fetchNearbyPlaces(ranchi.lat, ranchi.lng);
+            await fetchNearbyPlaces(ranchi.lat, ranchi.lng, 20000, 'Ranchi');
         } catch (err) {
             console.error('Init error:', err);
         } finally {
