@@ -807,7 +807,7 @@ body {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
-  height: 100%;
+  flex: 1;
   overflow: hidden;
 }
 
@@ -818,7 +818,7 @@ body {
   flex-direction: column;
   gap: 12px;
   padding: 8px;
-  min-height: 400px;
+  min-height: 0;
 }
 
 .chat-empty-state {
