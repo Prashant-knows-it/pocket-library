@@ -38,11 +38,24 @@ public class PdfController {
         }
 
         try {
-            // Extract text from PDF
-            String pdfText = fileService.extractTextFromPdf(fileId, user);
+            // Get file entity
+            var fileEntity = fileService.getFileById(fileId, user);
 
-            // Get summary from Perplexity
-            String summary = perplexityService.summarizePdf(pdfText);
+            String summary;
+
+            // Check if summary already exists in cache
+            if (fileEntity.getAiSummary() != null && !fileEntity.getAiSummary().isEmpty()) {
+                summary = fileEntity.getAiSummary();
+            } else {
+                // Extract text from PDF
+                String pdfText = fileService.extractTextFromPdf(fileId, user);
+
+                // Get summary from Perplexity
+                summary = perplexityService.summarizePdf(pdfText);
+
+                // Save summary to database for future use
+                fileService.saveSummary(fileId, user, summary);
+            }
 
             // Return response
             Map<String, String> response = new HashMap<>();

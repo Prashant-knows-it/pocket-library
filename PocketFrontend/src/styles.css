@@ -670,7 +670,7 @@ body {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(7, 16, 39, 0.98));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  max-width: 600px;
+  max-width: 750px;
   width: 100%;
   max-height: 90vh;
   display: flex;
@@ -692,7 +692,12 @@ body {
 }
 
 .pdf-chat-modal {
-  max-width: 700px;
+  max-width: 850px;
+  max-height: 90vh;
+}
+
+.pdf-summary-modal {
+  max-width: 800px;
   max-height: 85vh;
 }
 
@@ -737,8 +742,8 @@ body {
 /* Modal Body */
 .modal-body {
   padding: 24px;
-  overflow-y: auto;
   flex: 1;
+  overflow: hidden;
 }
 
 .summary-filename,
@@ -754,6 +759,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 12px;
   padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .summary-text {
@@ -800,7 +807,8 @@ body {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
-  max-height: 60vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 .chat-messages {
@@ -810,7 +818,7 @@ body {
   flex-direction: column;
   gap: 12px;
   padding: 8px;
-  min-height: 300px;
+  min-height: 400px;
 }
 
 .chat-empty-state {
@@ -1008,6 +1016,31 @@ body {
 .btn-secondary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Copy Button */
+.btn-copy {
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-copy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-copy:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 768px) {

@@ -20,7 +20,7 @@ public class FileEntity {
     private String fileName;
 
     @Column(nullable = false)
-    private String fileType;  // e.g. pdf, epub, etc.
+    private String fileType; // e.g. pdf, epub, etc.
 
     @Column(nullable = false)
     private String filePath;
@@ -32,11 +32,15 @@ public class FileEntity {
     @Column(nullable = false)
     private Long fileSize;
 
+    @Column(columnDefinition = "TEXT")
+    private String aiSummary; // Cached AI-generated summary
+
     @Column(nullable = false)
     private LocalDateTime uploadedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnore  // Prevent serialization of user to avoid circular references and lazy loading issues
+    @JsonIgnore // Prevent serialization of user to avoid circular references and lazy loading
+                // issues
     private User user;
 }

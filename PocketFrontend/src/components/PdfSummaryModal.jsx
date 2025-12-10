@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function PdfSummaryModal({ isOpen, onClose, summary, loading, fileName }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(summary);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -32,6 +40,11 @@ export default function PdfSummaryModal({ isOpen, onClose, summary, loading, fil
                 </div>
 
                 <div className="modal-footer">
+                    {!loading && summary && (
+                        <button className="btn-copy" onClick={handleCopy}>
+                            {copied ? '✓ Copied!' : '📋 Copy'}
+                        </button>
+                    )}
                     <button className="btn-secondary" onClick={onClose}>Close</button>
                 </div>
             </div>

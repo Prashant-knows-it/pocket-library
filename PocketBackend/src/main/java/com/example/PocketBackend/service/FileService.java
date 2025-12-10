@@ -185,4 +185,11 @@ public class FileService {
             throw new IOException("Failed to extract text from PDF: " + e.getMessage(), e);
         }
     }
+
+    // Save AI-generated summary to database
+    public void saveSummary(Long id, User user, String summary) {
+        FileEntity fileEntity = getFileById(id, user);
+        fileEntity.setAiSummary(summary);
+        fileRepository.save(fileEntity);
+    }
 }
