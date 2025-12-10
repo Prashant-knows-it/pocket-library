@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import PdfSummaryModal from '../components/PdfSummaryModal';
+import PdfChatModal from '../components/PdfChatModal';
 
 export default function Library() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  // PDF Summary Modal State
+  const [summaryModal, setSummaryModal] = useState({
+    isOpen: false,
+    summary: '',
+    loading: false,
+    fileName: ''
+  });
+
+  // PDF Chat Modal State
+  const [chatModal, setChatModal] = useState({
+    isOpen: false,
+    fileId: null,
+    fileName: ''
+  });
 
   // Fetch user's files on component mount
   useEffect(() => {
@@ -16,7 +33,7 @@ export default function Library() {
     try {
       setLoading(true);
       setError(null); // Clear any previous errors
-      
+
       // Check if user is authenticated
       const token = api.getAuthToken();
       if (!token) {
@@ -25,28 +42,28 @@ export default function Library() {
         setLoading(false);
         return;
       }
-      
+
       // Fetch files from API
       const userFiles = await api.getAllFiles();
-      
+
       // Successfully fetched files - clear any errors
       setError(null);
       setFiles(Array.isArray(userFiles) ? userFiles : []);
-      
+
     } catch (err) {
       const errorMsg = err.message || 'Failed to fetch files';
       console.error('Error fetching files:', err);
-      
+
       // Only set error if it's a real error (not just empty list)
       if (errorMsg && !errorMsg.includes('empty')) {
         setError(errorMsg);
       } else {
         setError(null); // Clear error for empty list
       }
-      
+
       // If unauthorized/forbidden, clear files and show error
-      if (errorMsg.includes('Unauthorized') || errorMsg.includes('Access denied') || 
-          errorMsg.includes('login') || errorMsg.includes('Forbidden')) {
+      if (errorMsg.includes('Unauthorized') || errorMsg.includes('Access denied') ||
+        errorMsg.includes('login') || errorMsg.includes('Forbidden')) {
         setFiles([]);
       }
     } finally {
@@ -62,8 +79,8 @@ export default function Library() {
     // Validate file type
     const fileType = file.type || '';
     const fileName = file.name.toLowerCase();
-    if (!fileType.includes('pdf') && !fileType.includes('epub') && 
-        !fileName.endsWith('.pdf') && !fileName.endsWith('.epub')) {
+    if (!fileType.includes('pdf') && !fileType.includes('epub') &&
+      !fileName.endsWith('.pdf') && !fileName.endsWith('.epub')) {
       setError('Please upload a PDF or EPUB file');
       e.target.value = '';
       return;
@@ -72,16 +89,16 @@ export default function Library() {
     try {
       setUploading(true);
       setError(null);
-      
+
       // Upload the file
       const uploadedFile = await api.uploadFile(file);
-      
+
       // Reset the file input
       e.target.value = '';
-      
+
       // Refresh the file list to show the new file
       await fetchFiles();
-      
+
       // Show success message
       alert('File uploaded successfully!');
     } catch (err) {
@@ -137,7 +154,7 @@ export default function Library() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      
+
       // Get filename from Content-Disposition header
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = 'download';
@@ -146,12 +163,12 @@ export default function Library() {
         // Handle Content-Disposition header format: attachment; filename="file.pdf"
         // Try to match quoted filename: filename="value"
         let filenameMatch = contentDisposition.match(/filename="([^"]+)"/i);
-        
+
         if (!filenameMatch) {
           // Try unquoted: filename=value
           filenameMatch = contentDisposition.match(/filename=([^;,\n\r]+)/i);
         }
-        
+
         if (filenameMatch && filenameMatch[1]) {
           filename = filenameMatch[1].trim();
           // Remove any surrounding quotes if still present
@@ -164,7 +181,7 @@ export default function Library() {
           filename = nameWithoutExt.replace(/_{2,}/g, '_').replace(/\s+/g, ' ').trim() + extension;
         }
       }
-      
+
       // Fallback: use content type to determine extension
       if (filename === 'download' || !filename.includes('.')) {
         const contentType = response.headers.get('Content-Type') || '';
@@ -174,7 +191,7 @@ export default function Library() {
           filename = 'file.epub';
         }
       }
-      
+
       a.download = filename;
       document.body.appendChild(a);
       a.click();
@@ -211,7 +228,7 @@ export default function Library() {
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const newWindow = window.open(blobUrl, '_blank');
-      
+
       // Clean up blob URL after window is closed (optional cleanup)
       if (newWindow) {
         newWindow.addEventListener('beforeunload', () => {
@@ -222,6 +239,45 @@ export default function Library() {
       setError(err.message || 'Failed to view file');
       console.error('Error viewing file:', err);
     }
+  };
+
+  // Handler for PDF Summarize
+  const handleSummarize = async (file) => {
+    setSummaryModal({
+      isOpen: true,
+      summary: '',
+      loading: true,
+      fileName: file.fileName
+    });
+
+    try {
+      const result = await api.summarizePdf(file.id);
+      setSummaryModal(prev => ({
+        ...prev,
+        summary: result.summary,
+        loading: false
+      }));
+    } catch (err) {
+      setSummaryModal(prev => ({
+        ...prev,
+        summary: `Error: ${err.message || 'Failed to generate summary'}`,
+        loading: false
+      }));
+    }
+  };
+
+  // Handler for PDF Chat
+  const handleChatOpen = (file) => {
+    setChatModal({
+      isOpen: true,
+      fileId: file.id,
+      fileName: file.fileName
+    });
+  };
+
+  const handleChatSend = async (fileId, messages) => {
+    const result = await api.chatWithPdf(fileId, messages);
+    return result.response;
   };
 
   // Format file size for display
@@ -301,23 +357,39 @@ export default function Library() {
                         )}
                       </div>
                       <p className="upload-date">
-                        Uploaded: {new Date(file.uploadedAt).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
+                        Uploaded: {new Date(file.uploadedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
                         })}
                       </p>
                     </div>
                   </div>
                   <div className="file-actions">
                     {file.fileType && file.fileType.includes('pdf') && (
-                      <button
-                        onClick={() => handleView(file.id)}
-                        className="btn-view"
-                        title="View PDF in browser"
-                      >
-                        👁️ View
-                      </button>
+                      <>
+                        <button
+                          onClick={() => handleView(file.id)}
+                          className="btn-view"
+                          title="View PDF in browser"
+                        >
+                          👁️ View
+                        </button>
+                        <button
+                          onClick={() => handleSummarize(file)}
+                          className="btn-summarize"
+                          title="Generate AI summary"
+                        >
+                          📝 Summarize
+                        </button>
+                        <button
+                          onClick={() => handleChatOpen(file)}
+                          className="btn-chat"
+                          title="Chat with PDF"
+                        >
+                          💬 Chat
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => handleDownload(file.id)}
@@ -340,6 +412,24 @@ export default function Library() {
           )}
         </div>
       )}
+
+      {/* PDF Summary Modal */}
+      <PdfSummaryModal
+        isOpen={summaryModal.isOpen}
+        onClose={() => setSummaryModal({ ...summaryModal, isOpen: false })}
+        summary={summaryModal.summary}
+        loading={summaryModal.loading}
+        fileName={summaryModal.fileName}
+      />
+
+      {/* PDF Chat Modal */}
+      <PdfChatModal
+        isOpen={chatModal.isOpen}
+        onClose={() => setChatModal({ ...chatModal, isOpen: false })}
+        fileId={chatModal.fileId}
+        fileName={chatModal.fileName}
+        onSendMessage={handleChatSend}
+      />
     </div>
   );
 }

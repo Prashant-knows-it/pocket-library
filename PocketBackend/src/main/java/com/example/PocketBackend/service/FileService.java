@@ -67,7 +67,7 @@ public class FileService {
         // EPUB Metadata Extraction placeholder for future
         else if (fileType != null && fileType.contains("epub")) {
             extractEpubMetadata(filePath, fileEntity);
-        } 
+        }
         // Default fallback to file name
         else {
             fileEntity.setTitle(fileEntity.getFileName());
@@ -118,12 +118,12 @@ public class FileService {
     public FileEntity getFileById(Long id, User user) {
         FileEntity fileEntity = fileRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("File not found with id: " + id));
-        
+
         // Verify the file belongs to the user
         if (!fileEntity.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("Access denied: File does not belong to user");
         }
-        
+
         return fileEntity;
     }
 
@@ -156,6 +156,33 @@ public class FileService {
             return resource;
         } else {
             throw new RuntimeException("File not found");
+        }
+    }
+
+    // Extract text from PDF file for AI processing
+    public String extractTextFromPdf(Long id, User user) throws IOException {
+        FileEntity fileEntity = getFileById(id, user);
+
+        if (uploadPath == null) {
+            uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+        }
+
+        Path filePath = uploadPath.resolve(fileEntity.getFilePath()).normalize();
+
+        try (PDDocument document = PDDocument.load(filePath.toFile())) {
+            org.apache.pdfbox.text.PDFTextStripper stripper = new org.apache.pdfbox.text.PDFTextStripper();
+            StringBuilder text = new StringBuilder();
+
+            for (int i = 1; i <= document.getNumberOfPages(); i++) {
+                stripper.setStartPage(i);
+                stripper.setEndPage(i);
+                text.append("\n--- Page ").append(i).append(" ---\n");
+                text.append(stripper.getText(document));
+            }
+
+            return text.toString();
+        } catch (Exception e) {
+            throw new IOException("Failed to extract text from PDF: " + e.getMessage(), e);
         }
     }
 }

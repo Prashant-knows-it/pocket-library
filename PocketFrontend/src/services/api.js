@@ -10,15 +10,15 @@ function getAuthToken() {
 function getAuthHeaders(includeContentType = false) {
   const token = getAuthToken()
   const headers = {}
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
-  
+
   if (includeContentType) {
     headers['Content-Type'] = 'application/json'
   }
-  
+
   return headers
 }
 
@@ -51,22 +51,22 @@ async function get(path) {
 
   // For GET requests, don't include Content-Type, only Authorization
   const headers = getAuthHeaders(false)
-  
+
   if (!headers['Authorization']) {
     throw new Error('Not authenticated. Please login.')
   }
-  
+
   const res = await fetch(FILES_API_BASE + path, {
     method: 'GET',
     headers: headers,
     credentials: 'include' // Include credentials for CORS
   })
-  
+
   if (!res.ok) {
     // Clone response to read body without consuming it
     const clonedRes = res.clone()
     let errorMessage = res.statusText || 'Request failed'
-    
+
     try {
       const text = await clonedRes.text()
       if (text && text.trim()) {
@@ -83,7 +83,7 @@ async function get(path) {
       console.error('Error reading response:', e)
       // Use status text if we can't read body
     }
-    
+
     if (res.status === 401 || res.status === 403) {
       // Token expired, invalid, or access denied
       localStorage.removeItem('token')
@@ -93,10 +93,10 @@ async function get(path) {
       }
       throw new Error('Unauthorized. Please login again.')
     }
-    
+
     throw new Error(errorMessage || 'Failed to fetch files')
   }
-  
+
   // Parse successful response
   try {
     const contentType = res.headers.get('content-type') || ''
@@ -104,7 +104,7 @@ async function get(path) {
       const data = await res.json()
       return Array.isArray(data) ? data : []
     }
-    
+
     // If not JSON, return empty array
     return []
   } catch (e) {
@@ -134,7 +134,7 @@ async function del(path) {
 async function uploadFile(file) {
   const formData = new FormData()
   formData.append('file', file)
-  
+
   const token = getAuthToken()
   const headers = {}
   if (token) {
@@ -147,7 +147,7 @@ async function uploadFile(file) {
     body: formData,
     credentials: 'include' // Include credentials for CORS
   })
-  
+
   if (!res.ok) {
     if (res.status === 401) {
       localStorage.removeItem('token')
@@ -181,5 +181,43 @@ export default {
   downloadFile: (id) => getFileUrl(`/download/${id}`),
   viewFile: (id) => getFileUrl(`/view/${id}`),
   // Helper to get auth token for manual fetch requests
-  getAuthToken: () => getAuthToken()
+  getAuthToken: () => getAuthToken(),
+
+  // PDF AI Features
+  summarizePdf: async (fileId) => {
+    const token = getAuthToken()
+    if (!token) throw new Error('Not authenticated')
+
+    const res = await fetch(`/api/pdf/summarize/${fileId}`, {
+      method: 'POST',
+      headers: getAuthHeaders(false),
+      credentials: 'include'
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || 'Failed to generate summary')
+    }
+
+    return res.json()
+  },
+
+  chatWithPdf: async (fileId, messages) => {
+    const token = getAuthToken()
+    if (!token) throw new Error('Not authenticated')
+
+    const res = await fetch(`/api/pdf/chat/${fileId}`, {
+      method: 'POST',
+      headers: getAuthHeaders(true),
+      body: JSON.stringify({ messages }),
+      credentials: 'include'
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(text || 'Failed to chat with PDF')
+    }
+
+    return res.json()
+  }
 }
