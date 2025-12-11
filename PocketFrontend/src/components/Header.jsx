@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../App'
+import StreakDisplay from './StreakDisplay'
 
 export default function Header() {
   const { auth, logout } = React.useContext(AuthContext)
@@ -26,6 +27,7 @@ export default function Header() {
           </div>
 
           <div className="actions">
+            {auth && auth.isAuthenticated && <StreakDisplay />}
             <button className="right-btn" onClick={handleRight}>
               {auth && auth.isAuthenticated ? '📖 My Library' : '🔐 Login'}
             </button>
